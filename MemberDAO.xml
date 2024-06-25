@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org/DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+       
+	<mapper namespace="com.kim.app.dao.MemberDAO">
+		<select id="selectAll" resultType="MemberDTO">
+			SELECT * 
+			FROM MEMBER
+		</select>
+		
+		<select id="selectOne" resultType="MemberDTO">
+			<if test="sc == null">
+			SELECT * 
+			FROM MEMBER 
+			WHERE MID=#{MID} AND MPW=#{MPW}
+			</if>
+			<if test="sc == 'duplicate'">
+			SELECT * 
+			FROM MEMBER 
+			WHERE MID=#{MID}
+			</if>
+		</select>
+		
+		<select id="getMemberByIdAndPwd" parameterType="MemberDTO" resultType="MemberDTO">
+			SELECT * 
+			FROM MEMBER 
+			WHERE MID=#{mid} AND MPW=#{mpw}
+		</select>
+		
+		<select id="getMemberById" parameterType="MemberDTO" resultType="MemberDTO">
+			SELECT m.*, sa.RENT_CAP, sa.RENT_PERIOD  
+			FROM MEMBER m, SETTING_AUTH sa
+			WHERE MID=#{mid} and m.AUTH = sa.AUTH
+		</select>
+		
+		<select id="getMemberByIdSearch" parameterType="String" resultType="MemberDTO">
+			SELECT m.*, sa.RENT_CAP, sa.RENT_PERIOD  
+			FROM MEMBER m, SETTING_AUTH sa
+			WHERE MID=#{member} and m.AUTH = sa.AUTH
+		</select>
+		
+		
+		<select id="getMemberByIdOrName" parameterType="String" resultType="MemberDTO">
+  			SELECT * 
+  			FROM MEMBER
+  			WHERE MID LIKE '%' + #{member} + '%'
+   			OR MEMBER_NAME LIKE '%' + #{member} + '%'
+		</select>
+		
+		<select id="getPwById" parameterType="String" resultType="String">
+			SELECT MPW
+			FROM MEMBER
+			WHERE MID=#{mid}
+		</select>
+		
+		
+		<select id="getCurRentalCntByMid" resultType="int">
+			SELECT CURRENT_RENTAL_COUNT
+			FROM MEMBER 
+			WHERE MID=#{mid}
+		</select>
+		
+		
+ 		<insert id="insert" parameterType="MemberDTO">
+		  	INSERT INTO MEMBER (MID, MPW, MEMBER_NAME, AUTH) 
+		  	VALUES (#{mid}, #{mpw}, #{memberName}, #{auth})
+	 	</insert>
+	 	
+      	<update id="update">
+		  	UPDATE MEMBER 
+		  	SET MPW=#{MPW} 
+		  	WHERE MID=#{MID}
+	  	</update>
+	  	
+	  	<update id="updateCurrentRentalCount">
+			UPDATE MEMBER
+			SET CURRENT_RENTAL_COUNT=#{currentRentalCount}
+			WHERE MID=#{mid}  
+		</update>
+	  	
+	  	<update id="updateMember" parameterType="MemberDTO">
+		  	UPDATE MEMBER 
+		  	SET AUTH=#{auth}, MEMBER_NAME = #{memberName} 
+		  	WHERE MID=#{mid}
+	  	</update>
+	  	
+	  	<update id="updateOverdue">
+			UPDATE MEMBER
+			SET AUTH=#{auth}
+			WHERE MID=#{mid}	  
+		</update>
+	  	
+      	<delete id="delete">
+		  	DELETE 
+		  	FROM MEMBER 
+		  	WHERE MID=#{MID}
+	  	</delete>
+
+</mapper>

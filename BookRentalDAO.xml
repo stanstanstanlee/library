@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org/DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+       
+	<mapper namespace="com.kim.app.dao.BookRentalDAO">
+		<insert id="insertBookRental">
+			INSERT INTO BOOK_RENTAL (RENTAL_NUM, MID, BOOK_NUM, BOOK_STK_NUM, RENTAL_DATE, RETURN_DUE_DATE) 
+		  	VALUES (#{rentalNum}, #{mid}, #{bookNum}, #{bookStkNum}, #{rentalDate}, #{returnDueDate})
+		</insert>		
+		
+		<select id="getAllDueDateByStkNums" parameterType="java.util.List" resultType="BookRentalDTO">
+			SELECT RETURN_DUE_DATE
+  			FROM BOOK_RENTAL
+  			WHERE BOOK_STK_NUM IN
+  				<foreach collection="list" item="item" open="(" separator="," close=")">
+    				#{item}
+  				</foreach>
+  			AND RETURNED_DATE IS NULL
+		</select>
+		
+		<select id="getRentalInfoByMid" parameterType="String" resultType="BookRentalDTO">
+			SELECT RENTAL_NUM, MID, BOOK_NUM, BOOK_STK_NUM, RENTAL_DATE, RETURN_DUE_DATE
+			FROM BOOK_RENTAL
+			WHERE MID=#{mid}
+			AND RETURNED_DATE IS NULL
+		</select>
+		
+		<select id="selectRentalTarget" parameterType="map" resultType="com.kim.app.dto.ReturnTargetDTO">
+			SELECT 
+				br.RENTAL_NUM as rentalNum, 
+				br.BOOK_NUM as bookNum, 
+				br.BOOK_STK_NUM as bookStkNum, 
+				br.RENTAL_DATE as rentalDate, 
+				br.RETURN_DUE_DATE as returnDueDate, 
+				b.BOOK_TITLE as bookTitle, 
+				b.BOOK_AUTHOR as bookAuthor, 
+				b.BOOK_REGISTER_DATE as bookRegisterDate
+				FROM BOOK_RENTAL br 
+				JOIN BOOK b
+					ON br.BOOK_NUM  = b.BOOK_NUM 
+				WHERE
+					<foreach collection="bookStkNum" item="item" open="br.book_stk_num in (" close=")" separator=",">
+						${item}
+					</foreach>
+					AND br.MID = #{mid}
+					AND br.RETURNED_DATE IS NULL
+		</select>
+		
+		<select id="selectAllOverduedRentals" resultType="ReturnTargetDTO">
+				SELECT
+				br.MID as mid,
+				br.RENTAL_NUM as rentalNum, 
+				br.BOOK_NUM as bookNum, 
+				br.BOOK_STK_NUM as bookStkNum, 
+				br.RENTAL_DATE as rentalDate, 
+				br.RETURN_DUE_DATE as returnDueDate, 
+				b.BOOK_TITLE as bookTitle, 
+				b.BOOK_AUTHOR as bookAuthor, 
+				b.BOOK_REGISTER_DATE as bookRegisterDate
+				FROM BOOK_RENTAL br 
+				JOIN BOOK b
+					ON br.BOOK_NUM  = b.BOOK_NUM 
+				WHERE CURRENT_TIMESTAMP > RETURN_DUE_DATE
+				AND RETURNED_DATE IS NULL;
+		</select>
+		
+		<select id="selectAllCloseToOverDues" resultType="ReturnTargetDTO">
+				SELECT
+				br.MID as mid,
+				br.RENTAL_NUM as rentalNum, 
+				br.BOOK_NUM as bookNum, 
+				br.BOOK_STK_NUM as bookStkNum, 
+				br.RENTAL_DATE as rentalDate, 
+				br.RETURN_DUE_DATE as returnDueDate, 
+				b.BOOK_TITLE as bookTitle, 
+				b.BOOK_AUTHOR as bookAuthor, 
+				b.BOOK_REGISTER_DATE as bookRegisterDate
+				FROM BOOK_RENTAL br 
+				JOIN BOOK b
+					ON br.BOOK_NUM  = b.BOOK_NUM 
+				WHERE 3 >= DATEDIFF(day, CURRENT_TIMESTAMP, RETURN_DUE_DATE) 
+				AND DATEDIFF(day, CURRENT_TIMESTAMP, RETURN_DUE_DATE) > 0	
+				AND RETURNED_DATE IS NULL;
+		</select>
+		
+		<select id="getOverdueMids" resultType="String">
+				SELECT MID
+				FROM BOOK_RENTAL
+				WHERE CURRENT_TIMESTAMP > RETURN_DUE_DATE
+				AND RETURNED_DATE IS NULL;
+		</select>
+		
+		<select id="getOverdueUsersWhoReturnedAllBooks">
+			  	SELECT M.MID
+    			FROM MEMBER M
+    			WHERE M.AUTH = 'overdue'
+    			AND NOT EXISTS (
+        		SELECT 1
+        		FROM BOOK_RENTAL BR
+        		WHERE BR.MID = M.MID
+        		AND BR.RETURNED_DATE IS NULL
+    			);
+		</select>
+		
+		<select id="selectAllRentalsByDates">
+			SELECT
+				br.MID as mid,
+				br.RENTAL_NUM as rentalNum, 
+				br.BOOK_NUM as bookNum, 
+				br.BOOK_STK_NUM as bookStkNum, 
+				br.RENTAL_DATE as rentalDate, 
+				br.RETURN_DUE_DATE as returnDueDate,
+				br.RETURNED_DATE as returnedDate, 
+				b.BOOK_TITLE as bookTitle, 
+				b.BOOK_AUTHOR as bookAuthor, 
+				b.BOOK_REGISTER_DATE as bookRegisterDate
+				FROM BOOK_RENTAL br 
+				JOIN BOOK b
+				ON br.BOOK_NUM  = b.BOOK_NUM 
+				ORDER BY RENTAL_DATE DESC;
+		</select>
+		
+		<select id="selectAllRentalsByTextAndDate" parameterType="String" resultType="ReturnTargetDTO">
+			SELECT	    
+				br.MID AS "mid",
+   				br.RENTAL_NUM AS "rentalNum",
+    			br.BOOK_NUM AS "bookNum",
+    			br.BOOK_STK_NUM AS "bookStkNum",
+    			br.RENTAL_DATE AS "rentalDate",
+     			br.RETURN_DUE_DATE AS "returnDueDate",
+     			br.RETURNED_DATE AS "returnedDate",
+     			b.BOOK_TITLE AS "bookTitle",
+     			b.BOOK_AUTHOR AS "bookAuthor",
+     			b.BOOK_REGISTER_DATE AS "bookRegisterDate"
+				FROM BOOK_RENTAL br 
+				JOIN BOOK b
+					ON br.BOOK_NUM  = b.BOOK_NUM 
+				WHERE (MID LIKE '%' + #{searchText} + '%')
+					   
+					   <if test="startDate != null">
+						   AND RENTAL_DATE BETWEEN #{startDate} AND #{endDate}
+					   </if>
+		</select>
+		
+		<select id="selectAllRentalsButNotReturned" parameterType="String" resultType="ReturnTargetDTO">
+			SELECT
+				br.MID as mid,
+				br.RENTAL_NUM as rentalNum, 
+				br.BOOK_NUM as bookNum, 
+				br.BOOK_STK_NUM as bookStkNum, 
+				br.RENTAL_DATE as rentalDate, 
+				br.RETURN_DUE_DATE as returnDueDate, 
+				b.BOOK_TITLE as bookTitle, 
+				b.BOOK_AUTHOR as bookAuthor, 
+				b.BOOK_REGISTER_DATE as bookRegisterDate
+				FROM BOOK_RENTAL br 
+				JOIN BOOK b
+					ON br.BOOK_NUM  = b.BOOK_NUM 
+				WHERE RETURNED_DATE IS NULL;
+		</select>
+		
+		<select id="selectAllReturnedHistory">
+			SELECT
+				br.MID AS "mid",
+   				br.RENTAL_NUM AS "rentalNum",
+    			br.BOOK_NUM AS "bookNum",
+    			br.BOOK_STK_NUM AS "bookStkNum",
+    			br.RENTAL_DATE AS "rentalDate",
+     			br.RETURN_DUE_DATE AS "returnDueDate",
+     			br.RETURNED_DATE AS "returnedDate",
+     			br.RETURN_ADMIN_MID AS "returnAdminMid",
+     			b.BOOK_TITLE AS "bookTitle",
+     			b.BOOK_AUTHOR AS "bookAuthor",
+     			b.BOOK_REGISTER_DATE AS "bookRegisterDate"
+				FROM BOOK_RENTAL br 
+				JOIN BOOK b
+					on br.BOOK_NUM = b.BOOK_NUM
+				WHERE RETURNED_DATE IS NOT NULL	
+				ORDER BY RETURNED_DATE DESC;		
+		</select>
+		
+			<select id="selectAllReturnedHistoryByTextAndDates" >
+			SELECT
+				br.MID AS "mid",
+   				br.RENTAL_NUM AS "rentalNum",
+    			br.BOOK_NUM AS "bookNum",
+    			br.BOOK_STK_NUM AS "bookStkNum",
+    			br.RENTAL_DATE AS "rentalDate",
+     			br.RETURN_DUE_DATE AS "returnDueDate",
+     			br.RETURNED_DATE AS "returnedDate",
+     			br.RETURN_ADMIN_MID AS "returnAdminMid",
+     			b.BOOK_TITLE AS "bookTitle",
+     			b.BOOK_AUTHOR AS "bookAuthor",
+     			b.BOOK_REGISTER_DATE AS "bookRegisterDate"
+				FROM BOOK_RENTAL br 
+				JOIN BOOK b
+					on br.BOOK_NUM = b.BOOK_NUM
+				WHERE (MID LIKE '%' + #{searchText} + '%')
+					   <if test="startDate != null">
+						   AND RETURNED_DATE BETWEEN #{startDate} AND #{endDate}
+					   </if>
+				AND RETURNED_DATE IS NOT NULL	
+				ORDER BY RETURNED_DATE DESC;		
+		</select>
+		
+		
+		<select id="selectConditionsWhenReturned" resultType="ReturnTargetDTO">
+			SELECT
+   				br.MID AS "mid",
+    			br.RENTAL_NUM AS "rentalNum",
+    			br.BOOK_NUM AS "bookNum",
+   				br.BOOK_STK_NUM AS "bookStkNum",
+    			br.RENTAL_DATE AS "rentalDate",
+    			br.RETURN_DUE_DATE AS "returnDueDate",
+    			br.RETURNED_DATE AS "returnedDate",
+    			br.RETURN_ADMIN_MID AS "returnAdminMid",
+    			br.EXTERIOR_CONDITION_ID AS "exteriorConditionId",
+    			br.INTERIOR_CONDITION_ID AS "interiorConditionId",
+    			b.BOOK_TITLE AS "bookTitle",
+    			b.BOOK_AUTHOR AS "bookAuthor",
+    			b.BOOK_REGISTER_DATE AS "bookRegisterDate"
+				FROM BOOK_RENTAL br
+				JOIN BOOK b ON br.BOOK_NUM = b.BOOK_NUM
+			
+				WHERE br.RETURNED_DATE IS NOT NULL
+				ORDER BY br.RETURNED_DATE DESC;
+		</select>
+		
+		<select id="searchConditionWhenReturned" resultType="ReturnTargetDTO" parameterType="ReturnTargetDTO">
+			SELECT
+   				br.MID AS "mid",
+    			br.RENTAL_NUM AS "rentalNum",
+    			br.BOOK_NUM AS "bookNum",
+   				br.BOOK_STK_NUM AS "bookStkNum",
+    			br.RENTAL_DATE AS "rentalDate",
+    			br.RETURN_DUE_DATE AS "returnDueDate",
+    			br.RETURNED_DATE AS "returnedDate",
+    			br.RETURN_ADMIN_MID AS "returnAdminMid",
+    			br.EXTERIOR_CONDITION_ID AS "exteriorConditionId",
+    			br.INTERIOR_CONDITION_ID AS "interiorConditionId",
+    			b.BOOK_TITLE AS "bookTitle",
+    			b.BOOK_AUTHOR AS "bookAuthor",
+    			b.BOOK_REGISTER_DATE AS "bookRegisterDate"
+				FROM BOOK_RENTAL br
+				JOIN BOOK b ON br.BOOK_NUM = b.BOOK_NUM
+				WHERE br.RETURNED_DATE IS NOT NULL
+				AND CONCAT(mid, '', BOOK_STK_NUM) LIKE '%' + #{searchText} + '%'
+					<if test="startDate != null">
+			    	AND RETURNED_DATE BETWEEN #{startDate} AND #{endDate}
+			  		</if>
+				ORDER BY br.RETURNED_DATE DESC;
+		</select>
+		
+		<update id="updateReturn" parameterType="com.kim.app.dto.RentalReturnDTO">
+			UPDATE 
+				BOOK_RENTAL 
+				SET RETURN_CONFIRMED = 1,
+					RETURNED_DATE = GETDATE(),
+					EXTERIOR_CONDITION_ID = #{exConditionId},
+					INTERIOR_CONDITION_ID = #{inConditionId},
+					RETURN_ADMIN_MID = #{adminMid}
+				WHERE BOOK_STK_NUM = #{bookStkNum}
+					AND RETURNED_DATE IS NULL
+		</update>
+	</mapper>

@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org/DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+       
+	<mapper namespace="com.kim.app.dao.BookDAO">
+		<select id="selectAll" resultType="BookDTO">
+    		SELECT * 
+    		FROM BOOK
+   		 	ORDER BY BOOK_REGISTER_DATE DESC;
+		</select>
+		
+				
+		<select id="getAllBooksInfoByManyStkNums" parameterType="java.util.List" resultType="BookDTO">
+  		  	SELECT B.*
+  		  	FROM BOOK B
+  		  	INNER JOIN BOOK_STK BS ON B.BOOK_NUM = BS.BOOK_NUM
+  		  	WHERE BS.BOOK_STK_NUM IN
+  		  	(
+    		 <foreach item="bookStkNum" collection="list" separator=",">
+  		          #{bookStkNum}
+   		     </foreach>
+   		 	)
+		</select>
+		
+		
+		<select id="getBookByNum" resultType="BookDTO">
+			SELECT *
+			FROM BOOK
+			WHERE BOOK_NUM=#{bookNum}
+		</select>
+		
+		<select id="getBookByIsbn" resultType="BookDTO">
+    		SELECT ISBN, COUNT(*),
+			MAX(BOOK_TITLE),
+			MAX(BOOK_AUTHOR)
+    		FROM BOOK
+    		GROUP BY ISBN;
+		</select>
+		
+		<select id="countBookStkByBookNum" resultType="int">
+   			SELECT COUNT(*)
+    		FROM BOOK_STK
+    		WHERE BOOK_NUM=#{bookNum}
+		</select>
+		
+		<select id="getBookInfoByStkNum" resultType="BookDTO">
+			SELECT *
+			FROM BOOK_STK
+			WHERE BOOK_STK_NUM=#{bookStkNum}
+		</select>
+		
+		<select id="getBookByStkNum" resultType="BookStkDTO">
+			SELECT *
+			FROM BOOK_STK
+			WHERE BOOK_STK_NUM=#{bookStkNum}
+		</select>
+		
+		<select id="getAllStkByBookNum" resultType="BookStkDTO">
+   			SELECT *
+    		FROM BOOK_STK
+    		WHERE BOOK_NUM=#{bookNum}
+		</select>
+
+		<select id="getBookByTitle" resultType="BookDTO">
+			SELECT *
+			FROM BOOK
+			WHERE BOOK_TITLE=#{bookTitle}
+		</select>
+		
+		<select id="getBookByTitleAndAuthor" resultType="BookDTO">
+			SELECT *
+			FROM BOOK
+			WHERE BOOK_TITLE=#{bookTitle} AND BOOK_AUTHOR=#{bookAuthor}
+		</select>
+		
+		<select id="getBookBySearchText" parameterType="String" resultType="BookDTO">
+			SELECT *
+			FROM BOOK
+			WHERE BOOK_TITLE LIKE '%' + #{bookTitle} + '%'
+			OR BOOK_AUTHOR LIKE '%' + #{bookAuthor} + '%'
+			OR BOOK_NUM LIKE '%' + #{bookNum} + '%'
+		</select>
+		
+		<select id="getBookBySearchTextAndDate" parameterType="BookDTO" resultType="BookDTO">
+   		 	SELECT *
+   		 	FROM BOOK
+    		WHERE (BOOK_TITLE LIKE '%' + #{searchText} + '%'
+        			OR BOOK_AUTHOR LIKE '%' + #{searchText} + '%'
+        			OR BOOK_NUM = #{searchText})
+        			
+        		<if test="startDate != null">
+			    	AND BOOK_REGISTER_DATE BETWEEN #{startDate} AND #{endDate}
+			  	</if>
+        	
+<!--      	 	AND (#{searchDate} = 'all' OR (#{startDate} IS NULL AND #{endDate} IS NULL)
+            OR (#{searchDate} = 'period' AND BOOK_REGISTER_DATE BETWEEN #{startDate} AND #{endDate})
+            OR (#{searchDate} = 'date' AND BOOK_REGISTER_DATE = #{startDate}))-->
+		</select>
+		
+		
+		<!--<insert id="insert" parameterType="BookDTO" useGeneratedKeys="true" keyProperty="bookNum">-->
+		<insert id="insert" parameterType="BookDTO">
+		  	INSERT INTO BOOK(BOOK_NUM, BOOK_TITLE, BOOK_AUTHOR, BOOK_REGISTER_DATE, BOOK_IMG) 
+		  	VALUES (#{bookNum}, #{bookTitle}, #{bookAuthor}, #{bookRegisterDate}, #{bookImg})
+	 	</insert>
+	 	
+	 	<insert id="insertStk" parameterType="BookStkDTO">
+		  	INSERT INTO BOOK_STK(BOOK_NUM, RENTED, DISPOSED) 
+		  	VALUES (#{bookNum}, #{rented}, #{disposed})
+	 	</insert>
+
+	  	<update id="update" parameterType="BookDTO">
+   			UPDATE BOOK 
+   			SET BOOK_TITLE=#{bookTitle}, BOOK_AUTHOR=#{bookAuthor}, BOOK_IMG=#{bookImg}
+    		WHERE BOOK_NUM=#{bookNum}
+		</update>
+	  	
+      	<delete id="delete" parameterType="BookDTO">
+		  	DELETE 
+		  	FROM BOOK 
+		  	WHERE BOOK_NUM=#{bookNum}
+	  	</delete>
+		
+		<delete id="deleteBooks" parameterType="java.util.List">
+			DELETE 
+		  	FROM BOOK 
+		  	WHERE BOOK_NUM IN
+		  	<foreach item="item" collection="list" open="(" separator="," close=")">
+       		#{item}
+   			</foreach>
+		</delete>
+		
+</mapper>

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org/DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+       
+	<mapper namespace="com.kim.app.dao.ReturnConditionSettingDAO">
+				
+		<select id="getExteriorConditionSetting" resultType="ReturnConditionSettingDTO">
+			SELECT EXTERIOR_CONDITION_ID, EXTERIOR_CONDITION_DISPLAY
+			FROM RETURN_CONDITION_SETTING;
+		</select>
+		
+		<select id="getInteriorConditionSetting" resultType="ReturnConditionSettingDTO">
+			SELECT INTERIOR_CONDITION_ID, INTERIOR_CONDITION_DISPLAY
+			FROM RETURN_CONDITION_SETTING;
+		</select>
+		
+		<select id="selectAllSetting" resultType="ReturnConditionSettingDTO">
+			SELECT EXTERIOR_CONDITION_ID, EXTERIOR_CONDITION_DISPLAY, INTERIOR_CONDITION_ID, INTERIOR_CONDITION_DISPLAY
+			FROM RETURN_CONDITION_SETTING;
+		</select>
+		
+		<update id="updateConditions" parameterType="java.util.List">
+			    UPDATE RETURN_CONDITION_SETTING
+    			SET 
+        		EXTERIOR_CONDITION_DISPLAY = CASE 
+           			<foreach collection="list" item="item" index="index" separator=" ">
+               			WHEN EXTERIOR_CONDITION_ID = #{item.exteriorConditionId} THEN #{item.exteriorConditionDisplay}
+            		</foreach>
+        		END,
+        		INTERIOR_CONDITION_DISPLAY = CASE 
+            		<foreach collection="list" item="item" index="index" separator=" ">
+                		WHEN INTERIOR_CONDITION_ID = #{item.interiorConditionId} THEN #{item.interiorConditionDisplay}
+            		</foreach>
+        		END
+    			WHERE 
+        		EXTERIOR_CONDITION_ID IN 
+        			<foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+            			#{item.exteriorConditionId}
+        			</foreach>
+        		OR
+        		INTERIOR_CONDITION_ID IN 
+        			<foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+            			#{item.interiorConditionId}
+        			</foreach>
+		</update>
+	
+</mapper>

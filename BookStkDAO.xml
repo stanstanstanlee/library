@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+	PUBLIC "-//mybatis.org/DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+       
+	<mapper namespace="com.kim.app.dao.BookStkDAO">
+				
+		<select id="getStkInfoByStkNum" resultType="BookStkDTO">
+			SELECT * 
+			FROM BOOK_STK
+			WHERE BOOK_STK_NUM=#{bookStkNum}
+		</select>
+		
+		<select id="getAllStkInfoByStkNumList" parameterType="java.util.List" resultType="BookStkDTO">
+    		SELECT BS.BOOK_STK_NUM, BS.BOOK_NUM, BS.EXTERIOR_CONDITION_ID, BS.INTERIOR_CONDITION_ID, 
+            RCS.EXTERIOR_CONDITION_DISPLAY, 
+           	RCS.INTERIOR_CONDITION_DISPLAY
+    		FROM BOOK_STK BS
+    		LEFT JOIN RETURN_CONDITION_SETTING RCS
+    		ON BS.EXTERIOR_CONDITION_ID = RCS.EXTERIOR_CONDITION_ID
+    		AND BS.INTERIOR_CONDITION_ID = RCS.INTERIOR_CONDITION_ID
+    		WHERE BS.BOOK_STK_NUM IN
+    		(
+       		<foreach item="bookStkNum" collection="list" separator=",">
+            	#{bookStkNum}
+        	</foreach>
+    		)
+		</select>
+		
+		 <select id="getStkConditionByStkNum" resultType="BookStkDTO">
+			SELECT BS.BOOK_STK_NUM, BS.BOOK_NUM, BS.EXTERIOR_CONDITION_ID, BS.INTERIOR_CONDITION_ID, 
+            RCS.EXTERIOR_CONDITION_DISPLAY, 
+           	RCS.INTERIOR_CONDITION_DISPLAY
+    		FROM BOOK_STK BS
+    		LEFT JOIN RETURN_CONDITION_SETTING RCS
+    		ON BS.EXTERIOR_CONDITION_ID = RCS.EXTERIOR_CONDITION_ID
+    		AND BS.INTERIOR_CONDITION_ID = RCS.INTERIOR_CONDITION_ID
+    		WHERE BS.BOOK_STK_NUM=#{bookStkNum}
+		 </select>
+		
+		<select id="getAllStkByStkNum" resultType="BookStkDTO">
+			SELECT *
+			FROM BOOK_STK
+			WHERE BOOK_STK_NUM LIKE CONCAT('%', #{bookStkNum}, '%')
+		</select>
+		
+		<select id="getAllStkByBookNum" resultType="BookStkDTO">
+   			SELECT *
+    		FROM BOOK_STK
+    		WHERE BOOK_NUM=#{bookNum}
+		</select>
+		
+		<select id="getAllStkByStkNumWithBookNum" resultType="BookStkDTO">
+    		SELECT *
+    		FROM BOOK_STK
+    		WHERE BOOK_STK_NUM LIKE CONCAT('%', #{bookStkNum}, '%')
+    		AND BOOK_NUM = #{bookNum}
+		</select>
+		 
+		<update id="update">
+			UPDATE BOOK_STK
+			SET RENTED=#{rented}
+			WHERE BOOK_STK_NUM=#{bookStkNum}
+		</update>
+	
+		<delete id="deleteAllStkByBookNum" parameterType="BookDTO">
+			DELETE 
+		  	FROM BOOK_STK
+		  	WHERE BOOK_NUM=#{bookNum}
+		</delete>
+		
+		<update id="updateReturn" parameterType="BookStkDTO">
+			UPDATE 
+				BOOK_STK 
+				set EXTERIOR_CONDITION_ID = #{exteriorConditionId},
+					INTERIOR_CONDITION_ID = #{interiorConditionId},
+					RENTED = 0
+				where BOOK_STK_NUM = #{bookStkNum}
+		</update>
+</mapper>
